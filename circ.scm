@@ -3,7 +3,9 @@
 (define server "irc.freenode.net")
 (define nick "testing123123asdfasdf")
 (define pfmt " > ")
-(define fmt "~S | ~S\n")
+(define sep " | ")
+(define sep_col COLOR_CYAN)
+(define nick_col COLOR_BLUE)
 
 (define con (irc:connection server: server nick: nick))
 
@@ -27,8 +29,12 @@
 ;; ncurses init
 
 (initscr)
+(start_color)
 (cbreak)
 (noecho)
+
+(init_pair 1 sep_col COLOR_BLACK)
+(init_pair 2 nick_col COLOR_BLACK)
 
 (define prompt (newwin 1 (COLS) (- (LINES) 1) 0))
 (define meswin (newwin (- (LINES) 1) (COLS) 0 0))
@@ -42,7 +48,14 @@
     (if (not (eq? c ERR))
       (cond
         ((eq? c NL)
-         (wprintw meswin fmt (string->symbol nick) (string->symbol inp))
+         (wattron meswin (COLOR_PAIR 2))
+         (wprintw meswin nick)
+         (wattroff meswin (COLOR_PAIR 2))
+         (wattron meswin (COLOR_PAIR 1))
+         (wprintw meswin sep)
+         (wattroff meswin (COLOR_PAIR 1))
+         (wprintw meswin inp)
+         (wprintw meswin "\n")
          (wrefresh meswin)
          (irc:say con inp)
          (wclear prompt)
@@ -55,6 +68,7 @@
              (set! inp (string-take inp (- (string-length inp) 1))))))
         (else
           (waddch prompt c)
+          (wrefresh prompt)
           (set! inp (string-append inp (list->string `(,c)))))))))
 
 ;; main loop
@@ -62,10 +76,15 @@
 (let loop ()
   (let ((m (irc:listen con)))
     (if m (begin
-            (wprintw meswin fmt
-                     (string->symbol (car (irc:message-prefix m)))
-                     (string->symbol (let ((b (irc:message-parameters m)))
-                       (if (null? (cdr b)) (car b) (cadr b)))))
+            (wattron meswin (COLOR_PAIR 2))
+            (wprintw meswin (car (irc:message-prefix m)))
+            (wattroff meswin (COLOR_PAIR 2))
+            (wattron meswin (COLOR_PAIR 1))
+            (wprintw meswin sep)
+            (wattroff meswin (COLOR_PAIR 1))
+            (wprintw meswin (let ((b (irc:message-parameters m)))
+                              (if (null? (cdr b)) (car b) (cadr b))))
+            (wprintw meswin "\n")
             (irc:process-message con m)
             (wrefresh meswin)))
     (handle-input (wgetch prompt))
