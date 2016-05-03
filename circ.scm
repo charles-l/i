@@ -39,7 +39,7 @@
 
 (define prompt (newwin 1 (COLS) (- (LINES) 1) 0))
 (define meswin (newwin (- (LINES) 1) (COLS) 0 0))
-(if (or (not prompt) (not meswin)) (error "failed to initialize ncurses"))
+
 (nodelay prompt #t)  ; non-blocking
 (scrollok meswin #t) ; scroll at bottom of screen
 
@@ -54,14 +54,21 @@
          (wprintw meswin "\n")
          (wrefresh meswin))
 
+(define (run-input inp)
+  (if (= (string-length inp) 0)
+    (void)
+    (if (eq? (string-ref inp 0) #\/)
+      (irc:command con (string-drop inp 1))
+      (irc:say con inp))))
+
 (define inp "")
 (define (handle-input c)
   (let-values (((cury curx) (getyx prompt)))
     (if (not (eq? c ERR))
       (cond
         ((eq? c NL)
-         (draw-msg nick inp)
-         (irc:say con inp)
+         (draw-msg (irc:connection-nick con) inp)
+         (run-input inp)
          (wclear prompt)
          (wprintw prompt pfmt)
          (set! inp ""))
@@ -77,8 +84,15 @@
 
 ;; main loop
 
+(define (try thunk) ; catch errors
+  (handle-exceptions exn
+    (begin
+      (wprintw meswin "error ~S\n" (->string (condition->list exn)))
+      #f)
+    (thunk)))
+
 (let loop ()
-  (let ((m (irc:listen con)))
+  (let ((m (try (lambda () (irc:listen con)))))
     (if m (begin
             (draw-msg
               (car (irc:message-prefix m))
