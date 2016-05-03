@@ -1,3 +1,4 @@
+(use ncurses) ; needed for color names
 (define server "irc.nixers.net")
 (define channel "#nixers") ; TODO: allow array
 (define nick "nc")
