@@ -1,7 +1,8 @@
 (require-extension irc posix posix-extras ncurses srfi-13)
 
-(define server "irc.freenode.net")
-(define nick "testing123123asdfasdf")
+(define server "irc.nixers.net")
+(define channel "#nixers") ; TODO: allow array
+(define nick "nc")
 (define pfmt " > ")
 (define sep " | ")
 (define sep_col COLOR_CYAN)
@@ -19,7 +20,7 @@
 ;; irc init
 
 (irc:connect con)
-(irc:join con "#testasdfasdf")
+(irc:join con channel)
 
 (irc:add-message-handler! con ; keep connection alive
   (lambda (msg)
@@ -44,15 +45,18 @@
 (scrollok meswin #t) ; scroll at bottom of screen
 
 (define (draw-msg nick msg)
-         (wattron meswin (COLOR_PAIR 2))
-         (wprintw meswin (string-pad (string-take nick nick_len) nick_len))
-         (wattroff meswin (COLOR_PAIR 2))
-         (wattron meswin (COLOR_PAIR 1))
-         (wprintw meswin sep)
-         (wattroff meswin (COLOR_PAIR 1))
-         (wprintw meswin msg)
-         (wprintw meswin "\n")
-         (wrefresh meswin))
+  (wattron meswin (COLOR_PAIR 2))
+  (wprintw meswin "~S" (string-pad (if (> (string-length nick) nick_len)
+                                (string-take nick nick_len)
+                                nick)
+                              nick_len))
+  (wattroff meswin (COLOR_PAIR 2))
+  (wattron meswin (COLOR_PAIR 1))
+  (wprintw meswin sep)
+  (wattroff meswin (COLOR_PAIR 1))
+  (wprintw meswin msg)
+  (wprintw meswin "\n")
+  (wrefresh meswin))
 
 (define (run-input inp)
   (if (= (string-length inp) 0)
@@ -93,12 +97,16 @@
 
 (let loop ()
   (let ((m (try (lambda () (irc:listen con)))))
-    (if m (begin
-            (draw-msg
-              (car (irc:message-prefix m))
-              (let ((b (irc:message-parameters m)))
-                (if (null? (cdr b)) (car b) (cadr b))) )
-            (irc:process-message con m)))
+    (if m
+      (begin
+        (draw-msg
+          (car (let ((p (irc:message-prefix m)))
+                 (if (null? p)
+                   '("")
+                   p)))
+          (let ((b (irc:message-parameters m)))
+            (if (null? (cdr b)) (car b) (cadr b))) )
+        (irc:process-message con m)))
     (handle-input (wgetch prompt))
     (wrefresh prompt))
   (sleep 0.01) ; throttle at ~60FPS ;)
