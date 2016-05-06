@@ -9,6 +9,7 @@
 (define ERR (integer->char 2097151))
 (define NL (integer->char 10))
 (define BS (integer->char 127))
+(define CU (integer->char 21))
 
 ;; irc init
 
@@ -85,7 +86,11 @@
          (if (> curx (string-length pfmt))
            (begin
              (mvwdelch prompt 0 (- curx 1))
-             (set! inp (string-take inp (- (string-length inp) 1))))))
+             (if (> (string-length inp) 1) ;; err.. hack that shouldn't happen
+               (set! inp (string-take inp (- (string-length inp) 1)))))))
+        ((eq? c CU)
+         (redraw-prompt)
+         (set! inp ""))
         (else
           (waddch prompt c)
           (wrefresh prompt)
