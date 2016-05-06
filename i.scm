@@ -92,7 +92,7 @@
          (redraw-prompt)
          (set! inp ""))
         (else
-          (waddch prompt c)
+          (waddch prompt c) ; note, multiwidth chars like ^U will get converted into two characters, but stored as one
           (wrefresh prompt)
           (set! inp (string-append inp (list->string `(,c)))))))))
 

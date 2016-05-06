@@ -2,8 +2,8 @@
 (define server "irc.nixers.net")
 (define channel "#nixers") ; TODO: allow array
 (define nick "nc")
-(define pfmt " > ")
+(define pfmt " > ") ; prompt
 (define sep " | ")
-(define sep_col COLOR_CYAN)
-(define nick_col COLOR_BLUE)
-(define nick_len 10)
+(define sep_col COLOR_GREEN)
+(define nick_col COLOR_GREEN)
+(define nick_len 10) ; width of nick column
