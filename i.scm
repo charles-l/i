@@ -51,12 +51,25 @@
   (wprintw meswin "\n")
   (wrefresh meswin))
 
+(define (redraw-prompt)
+  (wclear prompt)
+  (wprintw prompt pfmt)
+  (wrefresh prompt))
+
+(define (quit-i)
+  (endwin)
+  (quit))
+
 (define (run-input inp)
   (if (= (string-length inp) 0)
     (void)
     (if (eq? (string-ref inp 0) #\/)
-      (irc:command con (string-drop inp 1))
-      (irc:say con inp))))
+      (let ((s (string-drop inp 1)))
+        (irc:command con s)
+        (irc:say con inp)
+        (cond
+          ((equal? s "quit")
+           (quit-i)))))))
 
 (define inp "")
 (define (handle-input c)
@@ -66,8 +79,7 @@
         ((eq? c NL)
          (draw-msg (irc:connection-nick con) inp)
          (run-input inp)
-         (wclear prompt)
-         (wprintw prompt pfmt)
+         (redraw-prompt)
          (set! inp ""))
         ((eq? c BS)
          (if (> curx (string-length pfmt))
@@ -88,6 +100,7 @@
       #f)
     (thunk)))
 
+(redraw-prompt)
 (let loop ()
   (let ((m (try (lambda () (irc:listen con)))))
     (if m
