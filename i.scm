@@ -39,7 +39,7 @@
 
 (define (draw-msg nick msg)
   (wattron meswin (COLOR_PAIR 2))
-  (wprintw meswin "~S" (string-pad (if (> (string-length nick) nick_len)
+  (wprintw meswin "~A" (string-pad (if (> (string-length nick) nick_len)
                                 (string-take nick nick_len)
                                 nick)
                               nick_len))
@@ -84,7 +84,7 @@
 (define (try thunk) ; catch errors
   (handle-exceptions exn
     (begin
-      (wprintw meswin "error ~S\n" (->string (condition->list exn)))
+      (wprintw meswin "error ~A\n" (->string (condition->list exn)))
       #f)
     (thunk)))
 
